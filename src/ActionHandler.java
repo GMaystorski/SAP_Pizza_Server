@@ -91,6 +91,7 @@ public class ActionHandler extends Thread{
 		String choice = scan.nextLine();
 		switch(choice) {
 			case "back" : handleClient(); break;
+			case "proceed" : handleClient(); break;
 		}
 	}
 	
@@ -160,6 +161,24 @@ public class ActionHandler extends Thread{
 			}
 		}
 	}
+	
+	public void handleReorder() {
+		try {
+			List<Object> orderInfo = db.getOrdersByUser();
+			if(!orderInfo.isEmpty()) {
+				objWrite.writeObject(orderInfo.size()/2);
+				for(int i = 0 ; i < orderInfo.size()/2 ; i+=2) {
+					objWrite.writeObject(db.getCart((int) orderInfo.get(i)));
+					objWrite.writeObject(orderInfo.get(i+1));
+				}
+			}
+			else objWrite.writeObject(0);
+			clFirstOption();
+		} catch (SQLException | IOException e) {
+			e.printStackTrace();
+		}
+	}
+	
 	
 	public void clFirstOption() throws IOException {
 		String choice = scan.nextLine();

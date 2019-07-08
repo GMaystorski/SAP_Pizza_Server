@@ -119,7 +119,7 @@ public class DbHelper {
 	
 	
 	public Object fillOrder(List<String> cart) throws SQLException {
-		int orderId = getOrderId();
+		int orderId = getLastOrderId();
 		for(int i = 0 ; i < cart.size() ; i+=2) {
 			for(int j = 0 ; j < Integer.parseInt(cart.get(i+1)) ; j++){
 				int flag = (int)putProduct(Integer.parseInt(cart.get(i)),orderId);
@@ -138,8 +138,38 @@ public class DbHelper {
 		return SQLExecutor.executeUpdate(conn, "insert into product_order values(?,?)", params);
 	}
 	
+	public List<Object> getOrdersByUser() throws SQLException{
+		List<Object> params = new ArrayList<>();
+		List<Object> results = new ArrayList<>();
+		params.add(getUserId());
+		ResultSet rs = SQLExecutor.executeQuery(conn, "select id,location from orders where user_id = ?", params);
+		while(rs.next()) {
+			results.add(rs.getObject(1));
+			results.add(rs.getObject(2));
+		}
+		
+		return results;
+		
+	}
 	
-	public int getOrderId() throws SQLException {
+	public List<String> getCart(int orderId) throws SQLException{
+		List<Object> params = new ArrayList<>();
+		List<String> results = new ArrayList<>();
+		params.add(orderId);
+		ResultSet rs = SQLExecutor.executeQuery(conn, "select name,count(product_id),price from products "
+										+ "join product_order on products.id = product_id where order_id = 4 group by product_id ", params);
+		while(rs.next()) {
+			results.add(rs.getString(1));
+			results.add(String.valueOf(rs.getInt(2)));
+			results.add(String.valueOf(rs.getDouble(3)));
+		}
+		
+		return results;
+		
+		
+	}
+	
+	public int getLastOrderId() throws SQLException {
 		ResultSet rs = SQLExecutor.executeQuery(conn, "select id from orders order by id desc limit 1", new ArrayList<>());
 		rs.next();
 		return rs.getInt(1);
