@@ -57,6 +57,23 @@ public class DbHelper {
 		return results;
 	}
 	
+	public List<Object> getUsers() throws SQLException{
+		List<Object> results = new ArrayList<>();
+		ResultSet rs = SQLExecutor.executeQuery(conn, "select username from users", new ArrayList<>());
+		while(rs.next()) {
+			results.add(rs.getObject(1));
+		}
+		return results;
+	}
+	
+	public Object changeStatus(String username,int type) throws SQLException {
+		List<Object> params = new ArrayList<>();
+		params.add(type);
+		params.add(username);
+		return SQLExecutor.executeUpdate(conn, "update users set isAdmin = ? where username = ?", params);
+	}
+
+	
 	public Object updateProduct(String name,String quantity,double price) throws SQLException {
 		List<Object> params = new ArrayList<>();
 		params.add(name);
@@ -90,6 +107,59 @@ public class DbHelper {
 			currUser.add(0, username);
 			currUser.add(1, type);
 		}
+	}
+	
+	public Object createOrder(String location) throws SQLException {
+
+		List<Object> params = new ArrayList<>();
+		params.add(getUserId());
+		params.add(location);
+		return SQLExecutor.executeUpdate(conn, "insert into orders values(null,?,now(),?)", params);
+	}
+	
+	
+	public Object fillOrder(List<String> cart) throws SQLException {
+		int orderId = getOrderId();
+		for(int i = 0 ; i < cart.size() ; i+=2) {
+			for(int j = 0 ; j < Integer.parseInt(cart.get(i+1)) ; j++){
+				int flag = (int)putProduct(Integer.parseInt(cart.get(i)),orderId);
+				if (flag == 0) {
+					return 0;
+				}
+			}
+		}
+		return 1;
+	}
+	
+	public Object putProduct(int productId , int orderId) throws SQLException {
+		List<Object> params = new ArrayList<>();
+		params.add(productId);
+		params.add(orderId);
+		return SQLExecutor.executeUpdate(conn, "insert into product_order values(?,?)", params);
+	}
+	
+	
+	public int getOrderId() throws SQLException {
+		ResultSet rs = SQLExecutor.executeQuery(conn, "select id from orders order by id desc limit 1", new ArrayList<>());
+		rs.next();
+		return rs.getInt(1);
+	}
+	
+	
+ 	public int getUserId() throws SQLException {
+		List<Object> params = new ArrayList<>();
+		params.add(currUser.get(0));
+		ResultSet rs = SQLExecutor.executeQuery(conn, "select id from users where username = ?", params);
+		rs.next();
+		return rs.getInt(1);
+	}
+	
+	public int getProductId(String product) throws SQLException {
+		List<Object> params = new ArrayList<>();
+		params.add(product);
+		ResultSet rs = SQLExecutor.executeQuery(conn, "select id from products where name = ?", params);
+		rs.next();
+		return rs.getInt(1);
 	}
 	
 	public String getType(){

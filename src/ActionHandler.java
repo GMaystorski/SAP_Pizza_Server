@@ -1,6 +1,7 @@
 import java.io.*;
 import java.net.*;
 import java.sql.*;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
 
@@ -54,8 +55,13 @@ public class ActionHandler extends Thread{
 								  break;
 			}
 		}
-		catch(SQLException | IOException e) {
-			this.closeResources();
+		catch(SQLException | IOException  e) {
+			try {
+				objWrite.writeObject(0);
+			} catch (IOException e1) {
+				e1.printStackTrace();
+			}
+			//this.closeResources();
 			e.printStackTrace();
 		} 
 		
@@ -65,6 +71,8 @@ public class ActionHandler extends Thread{
 		try {
 			String choice = scan.nextLine();
 			switch(choice) {
+				case "1" : clFirstOption(); break;
+				case "2" : handleViewProducts();break;
 				case "logout" : db.logOut();
 						   this.run();
 						   break;
@@ -72,10 +80,18 @@ public class ActionHandler extends Thread{
 						  throw new InvalidChoiceException();
 			}
 		}
-		catch(InvalidChoiceException e) {
+		catch(InvalidChoiceException | IOException | SQLException  e) {
 			e.printStackTrace();
 		}
 		
+	}
+	
+	public void handleViewProducts() throws IOException, SQLException  {
+		objWrite.writeObject(db.getProducts());
+		String choice = scan.nextLine();
+		switch(choice) {
+			case "back" : handleClient(); break;
+		}
 	}
 	
 	public void handleAdmin() {
@@ -84,6 +100,7 @@ public class ActionHandler extends Thread{
 			switch(choice) {
 				case "1" : adFirstOption(); break;
 				case "2" : adSecondOption(); break;
+				case "4" : adFourthOption(); break;
 				case "logout" : db.logOut();
 						   this.run();
 						   break;
@@ -99,10 +116,11 @@ public class ActionHandler extends Thread{
 	}
 	
 	public Object handleAdd() {
-		String name = scan.nextLine();
-		String quantity = scan.nextLine();
-		String price = scan.nextLine();
+		
 		try {
+			String name = scan.nextLine();
+			String quantity = scan.nextLine();
+			String price = scan.nextLine();
 		  return db.addProduct(name, quantity, Double.parseDouble(price));
 		} catch (NumberFormatException e) {
 			e.printStackTrace();
@@ -130,12 +148,55 @@ public class ActionHandler extends Thread{
 			}
 	}
 	
-	public Object handleUpdate() {
-		String name = scan.nextLine();
-		String quantity = scan.nextLine();
-		double price = Double.parseDouble(scan.nextLine());
+	public void adFourthOption() throws IOException, SQLException {
+		objWrite.writeObject(db.getUsers());
+		int flag = 0;
+		while(flag == 0) {
+			String choice = scan.nextLine();
+			switch(choice) {
+				case "1" : objWrite.writeObject(handleUserChange(1)); break;
+				case "0" : objWrite.writeObject(handleUserChange(0)); break;
+				case "back" : flag = 1; handleAdmin(); break;
+			}
+		}
+	}
+	
+	public void clFirstOption() throws IOException {
+		String choice = scan.nextLine();
+		switch(choice) {
+			case "create" : objWrite.writeObject(handleOrder()); clFirstOption();break;
+			case "back" : handleClient(); break;
+		}
+	}
+	
+	public Object handleUserChange(int type) {
 		try {
+			String username = scan.nextLine();
+			return db.changeStatus(username,type);
+		}
+		catch(SQLException  e) {
+			e.printStackTrace();
+		}
+		return 0;
+	}
+	
+	public Object handleUpdate() {
+		try {
+			String name = scan.nextLine();
+			String quantity = scan.nextLine();
+			double price = Double.parseDouble(scan.nextLine());
 			return db.updateProduct(name, quantity, price);
+		}
+		catch(SQLException | NumberFormatException e) {
+			e.printStackTrace();
+		}
+		return 0;
+	}
+	
+	public Object handleDelete() {
+		try {
+			String name = scan.nextLine();
+			return db.deleteProduct(name);
 		}
 		catch(SQLException e) {
 			e.printStackTrace();
@@ -143,15 +204,42 @@ public class ActionHandler extends Thread{
 		return 0;
 	}
 	
-	public Object handleDelete() {
-		String name = scan.nextLine();
+	
+	public Object handleOrder() {
 		try {
-			return db.deleteProduct(name);
+			String location = scan.nextLine();
+			List<String> cart = getCart();
+			handleCart(cart);
+			db.createOrder(location);
+			return db.fillOrder(cart);
 		}
 		catch(SQLException e) {
 			e.printStackTrace();
 		}
+		
 		return 0;
+	}
+	
+	public List<String> getCart(){
+		int size = Integer.parseInt(scan.nextLine());
+		List<String> cart = new ArrayList<>();
+		for(int i = 0 ; i < size ; i++) {
+			cart.add(i, scan.nextLine());
+		}
+		return cart;
+		
+	}
+	
+	public void handleCart(List<String> cart) {
+		try {
+			for(int i = 0 ; i < cart.size() ; i+=2) {
+				cart.set(i, String.valueOf(db.getProductId(cart.get(i))));
+				cart.remove(i+2);
+			}
+		}
+		catch(SQLException e) {
+			e.printStackTrace();
+		}
 	}
 	
 
