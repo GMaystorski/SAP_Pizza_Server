@@ -157,7 +157,7 @@ public class DbHelper {
 		List<String> results = new ArrayList<>();
 		params.add(orderId);
 		ResultSet rs = SQLExecutor.executeQuery(conn, "select name,count(product_id),price from products "
-										+ "join product_order on products.id = product_id where order_id = 4 group by product_id ", params);
+										+ "join product_order on products.id = product_id where order_id = ? group by product_id ", params);
 		while(rs.next()) {
 			results.add(rs.getString(1));
 			results.add(String.valueOf(rs.getInt(2)));

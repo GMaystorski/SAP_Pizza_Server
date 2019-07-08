@@ -73,6 +73,7 @@ public class ActionHandler extends Thread{
 			switch(choice) {
 				case "1" : clFirstOption(); break;
 				case "2" : handleViewProducts();break;
+				case "3" : handleReorder();break;
 				case "logout" : db.logOut();
 						   this.run();
 						   break;
@@ -167,13 +168,17 @@ public class ActionHandler extends Thread{
 			List<Object> orderInfo = db.getOrdersByUser();
 			if(!orderInfo.isEmpty()) {
 				objWrite.writeObject(orderInfo.size()/2);
-				for(int i = 0 ; i < orderInfo.size()/2 ; i+=2) {
+				for(int i = 0 ; i < orderInfo.size() ; i+=2) {
 					objWrite.writeObject(db.getCart((int) orderInfo.get(i)));
 					objWrite.writeObject(orderInfo.get(i+1));
 				}
+				clFirstOption();
 			}
-			else objWrite.writeObject(0);
-			clFirstOption();
+			else {
+				objWrite.writeObject(0);
+				handleClient();
+			}
+			
 		} catch (SQLException | IOException e) {
 			e.printStackTrace();
 		}
