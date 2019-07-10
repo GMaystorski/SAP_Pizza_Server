@@ -169,6 +169,27 @@ public class DbHelper {
 		
 	}
 	
+	public List<List<Object>> getOrderDateToDate(String from , String to) throws SQLException{
+		List<Object> params = new ArrayList<>();
+		List<List<Object>> orders = new ArrayList<>();
+		ResultSet rs;
+		if(from != null && to != null) {
+			params.add(from);
+			params.add(to);
+			rs = SQLExecutor.executeQuery(conn, "SELECT * FROM orders where date(date) between ? and ?", params);
+		}
+		else rs = SQLExecutor.executeQuery(conn, "select * from orders", params);
+		while(rs.next()) {
+			List<Object> subOrder  = new ArrayList<>();
+			subOrder.add(rs.getObject(1));
+			subOrder.add(getUserFromId(rs.getInt(2)));
+			subOrder.add(rs.getObject(3));
+			subOrder.add(rs.getObject(4));
+			orders.add(subOrder);
+		}
+		return orders;
+	}
+	
 	public int getLastOrderId() throws SQLException {
 		ResultSet rs = SQLExecutor.executeQuery(conn, "select id from orders order by id desc limit 1", new ArrayList<>());
 		rs.next();
@@ -183,6 +204,14 @@ public class DbHelper {
 		rs.next();
 		return rs.getInt(1);
 	}
+ 	
+ 	public String getUserFromId(int id) throws SQLException {
+ 		List<Object> params = new ArrayList<>();
+ 		params.add(id);
+ 		ResultSet rs = SQLExecutor.executeQuery(conn, "select username from users where id = ?", params);
+ 		rs.next();
+ 		return rs.getString(1);
+ 	}
 	
 	public int getProductId(String product) throws SQLException {
 		List<Object> params = new ArrayList<>();

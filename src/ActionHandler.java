@@ -102,6 +102,7 @@ public class ActionHandler extends Thread{
 			switch(choice) {
 				case "1" : adFirstOption(); break;
 				case "2" : adSecondOption(); break;
+				case "3" : adThirdOption(); break;
 				case "4" : adFourthOption(); break;
 				case "logout" : db.logOut();
 						   this.run();
@@ -150,6 +151,35 @@ public class ActionHandler extends Thread{
 			}
 	}
 	
+	public void adThirdOption() throws SQLException, IOException {
+		List<List<Object>> orders = new ArrayList<>();
+		String type = scan.nextLine();
+		if(type.equals("setDates")) {
+			String dateFrom = scan.nextLine();
+			String dateTo = scan.nextLine();
+			orders = db.getOrderDateToDate(dateFrom, dateTo);
+		}
+		else if(type.equals("empty")) {
+			orders = db.getOrderDateToDate(null, null);
+		}
+		if(orders == null) {
+			handleAdmin();
+		}
+		else {
+			objWrite.writeObject(orders.size());
+			for(int i = 0 ; i < orders.size() ; i++) {
+				objWrite.writeObject(db.getCart((int) orders.get(i).get(0)));
+			}
+			objWrite.writeObject(orders);
+			String choice = scan.nextLine();
+			switch(choice) {
+				case "back" : handleAdmin(); break;
+			}
+		}
+		
+		
+	}
+	
 	public void adFourthOption() throws IOException, SQLException {
 		objWrite.writeObject(db.getUsers());
 		int flag = 0;
@@ -172,7 +202,11 @@ public class ActionHandler extends Thread{
 					objWrite.writeObject(db.getCart((int) orderInfo.get(i)));
 					objWrite.writeObject(orderInfo.get(i+1));
 				}
-				clFirstOption();
+				String choice = scan.nextLine();
+				switch(choice) {
+					case "create" : objWrite.writeObject(handleOrder()); handleReorder();break;
+					case "back" : handleClient(); break;
+				}
 			}
 			else {
 				objWrite.writeObject(0);
