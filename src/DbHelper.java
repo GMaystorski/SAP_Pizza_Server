@@ -15,6 +15,9 @@ public class DbHelper {
 		}
 	}
 	
+	
+	////METHODS FOR USERS TABLE////////////////////////////////
+	/////////////////////////////////////////////
 	public List<Object> logUser(String username , String password) throws SQLException{
 		List<Object> params = new ArrayList<>();
 		List<Object> results = new ArrayList<>();
@@ -38,6 +41,42 @@ public class DbHelper {
 		return SQLExecutor.executeUpdate(conn, "Insert into users (username,password) values (?,?)", params);
 	}
 	
+	public List<Object> getUsers() throws SQLException{
+		List<Object> results = new ArrayList<>();
+		ResultSet rs = SQLExecutor.executeQuery(conn, "select username from users", new ArrayList<>());
+		while(rs.next()) {
+			results.add(rs.getObject(1));
+		}
+		return results;
+	}
+
+	public Object changeStatus(String username,int type) throws SQLException {
+		List<Object> params = new ArrayList<>();
+		params.add(type);
+		params.add(username);
+		return SQLExecutor.executeUpdate(conn, "update users set isAdmin = ? where username = ?", params);
+	}
+
+	public int getUserId() throws SQLException {
+		List<Object> params = new ArrayList<>();
+		params.add(currUser.get(0));
+		ResultSet rs = SQLExecutor.executeQuery(conn, "select id from users where username = ?", params);
+		rs.next();
+		return rs.getInt(1);
+	}
+	
+	public String getUserFromId(int id) throws SQLException {
+ 		List<Object> params = new ArrayList<>();
+ 		params.add(id);
+ 		ResultSet rs = SQLExecutor.executeQuery(conn, "select username from users where id = ?", params);
+ 		rs.next();
+ 		return rs.getString(1);
+ 	}
+	
+	
+	
+	////METHODS FOR PRODUCTS TABLE////////////////////////////////
+	//////////////////////////////////////////////////////////////
 	public Object addProduct(String name ,String quantity , double price) throws SQLException {
 		List<Object> params = new ArrayList<>();
 		params.add(name);
@@ -57,29 +96,12 @@ public class DbHelper {
 		return results;
 	}
 	
-	public List<Object> getUsers() throws SQLException{
-		List<Object> results = new ArrayList<>();
-		ResultSet rs = SQLExecutor.executeQuery(conn, "select username from users", new ArrayList<>());
-		while(rs.next()) {
-			results.add(rs.getObject(1));
-		}
-		return results;
-	}
-	
-	public Object changeStatus(String username,int type) throws SQLException {
-		List<Object> params = new ArrayList<>();
-		params.add(type);
-		params.add(username);
-		return SQLExecutor.executeUpdate(conn, "update users set isAdmin = ? where username = ?", params);
-	}
-
-	
-	public Object updateProduct(String name,String quantity,double price) throws SQLException {
+	public Object updateProduct(String name,String quantity,double price,String oldName) throws SQLException {
 		List<Object> params = new ArrayList<>();
 		params.add(name);
 		params.add(quantity);
 		params.add(price);
-		params.add(name);
+		params.add(oldName);
 		return SQLExecutor.executeUpdate(conn, "Update products set name = ? , quantity = ? , price = ? where name = ?", params);
 	}
 	
@@ -89,26 +111,25 @@ public class DbHelper {
 		return SQLExecutor.executeUpdate(conn, "Delete from products where name = ?", params);
 	}
 	
-	
-	public void closeConnection() {
-		try {
-			conn.close();
-		} catch (SQLException e) {
-			e.printStackTrace();
-		}
+	public Object putProduct(int productId , int orderId) throws SQLException {
+		List<Object> params = new ArrayList<>();
+		params.add(productId);
+		params.add(orderId);
+		return SQLExecutor.executeUpdate(conn, "insert into product_order values(?,?)", params);
 	}
 	
-	public void updateUser(String username , String type) {
-		if(currUser.isEmpty()) {
-			currUser.add(username);
-			currUser.add(type);
-		}
-		else {
-			currUser.add(0, username);
-			currUser.add(1, type);
-		}
+	public int getProductId(String product) throws SQLException {
+		List<Object> params = new ArrayList<>();
+		params.add(product);
+		ResultSet rs = SQLExecutor.executeQuery(conn, "select id from products where name = ?", params);
+		rs.next();
+		return rs.getInt(1);
 	}
+
 	
+	
+	////METHODS FOR ORDERS TABLE//////////////////////////////////
+	/////////////////////////////////////////////////////////////
 	public Object createOrder(String location) throws SQLException {
 
 		List<Object> params = new ArrayList<>();
@@ -116,8 +137,7 @@ public class DbHelper {
 		params.add(location);
 		return SQLExecutor.executeUpdate(conn, "insert into orders values(null,?,now(),?)", params);
 	}
-	
-	
+
 	public Object fillOrder(List<String> cart) throws SQLException {
 		int orderId = getLastOrderId();
 		for(int i = 0 ; i < cart.size() ; i+=2) {
@@ -130,14 +150,7 @@ public class DbHelper {
 		}
 		return 1;
 	}
-	
-	public Object putProduct(int productId , int orderId) throws SQLException {
-		List<Object> params = new ArrayList<>();
-		params.add(productId);
-		params.add(orderId);
-		return SQLExecutor.executeUpdate(conn, "insert into product_order values(?,?)", params);
-	}
-	
+
 	public List<Object> getOrdersByUser() throws SQLException{
 		List<Object> params = new ArrayList<>();
 		List<Object> results = new ArrayList<>();
@@ -197,28 +210,28 @@ public class DbHelper {
 	}
 	
 	
- 	public int getUserId() throws SQLException {
-		List<Object> params = new ArrayList<>();
-		params.add(currUser.get(0));
-		ResultSet rs = SQLExecutor.executeQuery(conn, "select id from users where username = ?", params);
-		rs.next();
-		return rs.getInt(1);
-	}
- 	
- 	public String getUserFromId(int id) throws SQLException {
- 		List<Object> params = new ArrayList<>();
- 		params.add(id);
- 		ResultSet rs = SQLExecutor.executeQuery(conn, "select username from users where id = ?", params);
- 		rs.next();
- 		return rs.getString(1);
- 	}
 	
-	public int getProductId(String product) throws SQLException {
-		List<Object> params = new ArrayList<>();
-		params.add(product);
-		ResultSet rs = SQLExecutor.executeQuery(conn, "select id from products where name = ?", params);
-		rs.next();
-		return rs.getInt(1);
+	
+	
+	///MISCELLANEOUS HELPERS,GETTERS AND ETC.////////////////
+	////////////////////////////////////////////////////////
+	public void closeConnection() {
+		try {
+			conn.close();
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	public void updateUser(String username , String type) {
+		if(currUser.isEmpty()) {
+			currUser.add(username);
+			currUser.add(type);
+		}
+		else {
+			currUser.add(0, username);
+			currUser.add(1, type);
+		}
 	}
 	
 	public String getType(){

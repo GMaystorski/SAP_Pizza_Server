@@ -43,6 +43,7 @@ public class ActionHandler extends Thread{
 		}
 	}
 	
+	////IDENTIFY LOGIN TYPE AND REFER TO ACCORDING METHODS///////
 	public void handleMain() {
 		try {
 			String username = scan.nextLine();
@@ -51,8 +52,9 @@ public class ActionHandler extends Thread{
 			switch(type) {
 				case "login" : objWrite.writeObject(db.logUser(username, password));break;
 				case "register" : objWrite.writeObject(db.regUser(username, password));
-								  db.updateUser(username, "0"); 
+								  db.updateUser(username, "false"); 
 								  break;
+				case "fail" : throw new SQLException();
 			}
 		}
 		catch(SQLException | IOException  e) {
@@ -67,7 +69,10 @@ public class ActionHandler extends Thread{
 		
 	}
 	
+	////LISTEN FOR CLIENT MENU CHOICES AND EXECUTE AFTERWARDS//////
+	///////////////////////////////////////////////////////
 	public void handleClient() {
+
 		try {
 			String choice = scan.nextLine();
 			switch(choice) {
@@ -87,6 +92,9 @@ public class ActionHandler extends Thread{
 		
 	}
 	
+	
+	////METHODS HANDLING CLIENT CHOICES////////////////////
+	//////////////////////////////////////////////////////
 	public void handleViewProducts() throws IOException, SQLException  {
 		objWrite.writeObject(db.getProducts());
 		String choice = scan.nextLine();
@@ -96,6 +104,57 @@ public class ActionHandler extends Thread{
 		}
 	}
 	
+	public void handleReorder() {
+		try {
+			List<Object> orderInfo = db.getOrdersByUser();
+			if(!orderInfo.isEmpty()) {
+				objWrite.writeObject(orderInfo.size()/2);
+				for(int i = 0 ; i < orderInfo.size() ; i+=2) {
+					objWrite.writeObject(db.getCart((int) orderInfo.get(i)));
+					objWrite.writeObject(orderInfo.get(i+1));
+				}
+				String choice = scan.nextLine();
+				switch(choice) {
+					case "create" : objWrite.writeObject(handleOrder()); handleReorder();break;
+					case "back" : handleClient(); break;
+				}
+			}
+			else {
+				objWrite.writeObject(0);
+				handleClient();
+			}
+			
+		} catch (SQLException | IOException e) {
+			e.printStackTrace();
+		}
+	}
+
+	public void clFirstOption() throws IOException {
+		String choice = scan.nextLine();
+		switch(choice) {
+			case "create" : objWrite.writeObject(handleOrder()); clFirstOption();break;
+			case "back" : handleClient(); break;
+		}
+	}
+	
+	public Object handleOrder() {
+		try {
+			String location = scan.nextLine();
+			List<String> cart = getCart();
+			handleCart(cart);
+			db.createOrder(location);
+			return db.fillOrder(cart);
+		}
+		catch(SQLException e) {
+			e.printStackTrace();
+		}
+		
+		return 0;
+	}
+	
+	
+	/////LISTEN FOR ADMIN CHOICES AND EXECUTE AFTERWARDS////
+	////////////////////////////////////////////////////////
 	public void handleAdmin() {
 		try {
 			String choice = scan.nextLine();
@@ -118,13 +177,18 @@ public class ActionHandler extends Thread{
 		}
 	}
 	
+	/////METHODS HANDLING ADMIN CHOICES/////////////////////
+	//////////////////////////////////////////////////////
 	public Object handleAdd() {
 		
 		try {
 			String name = scan.nextLine();
 			String quantity = scan.nextLine();
 			String price = scan.nextLine();
-		  return db.addProduct(name, quantity, Double.parseDouble(price));
+			if(name.isEmpty() || quantity.isEmpty() || price.isEmpty()) {
+				throw new SQLException();
+			}
+			else return db.addProduct(name, quantity, Double.parseDouble(price));
 		} catch (NumberFormatException e) {
 			e.printStackTrace();
 		} catch (SQLException e) {
@@ -193,40 +257,6 @@ public class ActionHandler extends Thread{
 		}
 	}
 	
-	public void handleReorder() {
-		try {
-			List<Object> orderInfo = db.getOrdersByUser();
-			if(!orderInfo.isEmpty()) {
-				objWrite.writeObject(orderInfo.size()/2);
-				for(int i = 0 ; i < orderInfo.size() ; i+=2) {
-					objWrite.writeObject(db.getCart((int) orderInfo.get(i)));
-					objWrite.writeObject(orderInfo.get(i+1));
-				}
-				String choice = scan.nextLine();
-				switch(choice) {
-					case "create" : objWrite.writeObject(handleOrder()); handleReorder();break;
-					case "back" : handleClient(); break;
-				}
-			}
-			else {
-				objWrite.writeObject(0);
-				handleClient();
-			}
-			
-		} catch (SQLException | IOException e) {
-			e.printStackTrace();
-		}
-	}
-	
-	
-	public void clFirstOption() throws IOException {
-		String choice = scan.nextLine();
-		switch(choice) {
-			case "create" : objWrite.writeObject(handleOrder()); clFirstOption();break;
-			case "back" : handleClient(); break;
-		}
-	}
-	
 	public Object handleUserChange(int type) {
 		try {
 			String username = scan.nextLine();
@@ -242,8 +272,12 @@ public class ActionHandler extends Thread{
 		try {
 			String name = scan.nextLine();
 			String quantity = scan.nextLine();
-			double price = Double.parseDouble(scan.nextLine());
-			return db.updateProduct(name, quantity, price);
+			String price = scan.nextLine();
+			String oldName = scan.nextLine();
+			if(name.isEmpty() || quantity.isEmpty() || price.isEmpty()) {
+				throw new SQLException();
+			}
+			return db.updateProduct(name, quantity, Double.parseDouble(price),oldName);
 		}
 		catch(SQLException | NumberFormatException e) {
 			e.printStackTrace();
@@ -263,21 +297,9 @@ public class ActionHandler extends Thread{
 	}
 	
 	
-	public Object handleOrder() {
-		try {
-			String location = scan.nextLine();
-			List<String> cart = getCart();
-			handleCart(cart);
-			db.createOrder(location);
-			return db.fillOrder(cart);
-		}
-		catch(SQLException e) {
-			e.printStackTrace();
-		}
-		
-		return 0;
-	}
 	
+	/////CART HELPERS/////////////////
+	///////////////////////////////
 	public List<String> getCart(){
 		int size = Integer.parseInt(scan.nextLine());
 		List<String> cart = new ArrayList<>();

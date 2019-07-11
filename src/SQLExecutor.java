@@ -4,7 +4,7 @@ import java.util.List;
 public class SQLExecutor {
 	private static PreparedStatement statement;
 
-    static ResultSet executeQuery(Connection conn, String sql, List<Object> params) throws SQLException {
+    static synchronized ResultSet executeQuery(Connection conn, String sql, List<Object> params) throws SQLException {
         statement = conn.prepareStatement(sql);
         for (int i = 0; i < params.size(); i++) {
             statement.setObject(i + 1, params.get(i));
@@ -13,7 +13,7 @@ public class SQLExecutor {
     }
 
 
-    static int executeUpdate(Connection conn, String sql, List<Object> params) throws SQLException {
+    static synchronized int executeUpdate(Connection conn, String sql, List<Object> params) throws SQLException {
         statement = conn.prepareStatement(sql);
         for (int i = 0; i < params.size(); i++) {
             statement.setObject(i + 1, params.get(i));
